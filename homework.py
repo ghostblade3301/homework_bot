@@ -7,7 +7,6 @@ from http import HTTPStatus
 import requests
 import telegram
 from dotenv import load_dotenv
-from pprint import pprint
 
 load_dotenv()
 
@@ -16,7 +15,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_PERIOD = 600
+RETRY_PERIOD = 10
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -41,9 +40,9 @@ def check_tokens():
         sys.exit('Завершение работы бота')
 
 
-# def send_message(bot, message):
-#     """Отправка сообщения пользователю."""
-#     ...
+def send_message(bot, message):
+    """Отправка сообщения пользователю."""
+    bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
 
 
 def get_api_answer(timestamp):
@@ -67,10 +66,10 @@ def get_api_answer(timestamp):
 def check_response(response):
     """Проверка данных api на наличие ключевых составляющих."""
     logging.info('Проверка данных началась')
-    if not isinstance(response, dict):
-        raise TypeError('Ответ от api приходит не в типе данных dict')
     homeworks = response.get('homeworks')
     current_date = response.get('current_date')
+    if not isinstance(response, dict):
+        raise TypeError('Ответ от api приходит не в типе данных dict')
     if not isinstance(homeworks, list):
         raise TypeError('homeworks приходит не в типе данных list')
     if not homeworks:
@@ -101,23 +100,29 @@ def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     # Временная метка в unix формате
     timestamp = 0
-    # Получаем ответ от api через функцию get_api_answer
-    response = get_api_answer(timestamp)
-    # Получаем корректные данные после проверки функцией check_response
-    homework = check_response(response)
-    parsed_homework = parse_status(homework)
-    pprint(parsed_homework)
-
-
-#     while True:
-#         try:
-
-#             ...
-
-#         except Exception as error:
-#             message = f'Сбой в работе программы: {error}'
-#             ...
-#         ...
+    hwork_status = None
+    while True:
+        try:
+            # Получаем ответ от api через функцию get_api_answer
+            response = get_api_answer(timestamp)
+            # Получаем корректные данные после проверки функцией check_response
+            homework = check_response(response)
+            parsed_homework = parse_status(homework)
+            if homework:
+                hwork_status_old = hwork_status
+                hwork_status = parsed_homework
+                if (hwork_status_old != hwork_status):
+                    send_message(bot, hwork_status)
+                else:
+                    send_message(bot, 'Статус не изменился')
+            else:
+                hwork_status_old = None
+                hwork_status = None
+        except Exception as error:
+            message = f'Сбой в работе программы: {error}'
+            logging.error(message)
+        finally:
+            time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
