@@ -57,7 +57,7 @@ def get_api_answer(timestamp):
             params=payload,
         )
         if response.status_code != HTTPStatus.OK:
-            raise ConnectionError('Эндпоинт не доступен')
+            raise ConnectionError('ENDPOINT не доступен')
         return response.json()
     except:
         logging.critical('Не удалось получить ответ от api')
@@ -65,24 +65,48 @@ def get_api_answer(timestamp):
 
 
 def check_response(response):
-    """Проверка данных api на наличие ключевых состовляющих."""
-    ...
+    """Проверка данных api на наличие ключевых составляющих."""
+    logging.info('Проверка данных началась')
+    if not isinstance(response, dict):
+        raise TypeError('Ответ от api приходит не в типе данных dict')
+    homeworks = response.get('homeworks')
+    current_date = response.get('current_date')
+    if not isinstance(homeworks, list):
+        raise TypeError('homeworks приходит не в типе данных list')
+    if not homeworks:
+        raise KeyError('В ответе от api нет ключа homeworks')
+    if not current_date:
+        raise KeyError('В ответе от api нет ключа homeworks')
+    return homeworks
 
 
-# def parse_status(homework):
-#     """Получения статуса работы"""
-#     ...
-
-#     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+def parse_status(homework):
+    """Получения статуса работы"""
+    last_homework = homework[0]
+    homework_name = last_homework.get('homework_name')
+    status = last_homework.get('status')
+    if not homework_name:
+        raise KeyError('В полученных данных нет ключа homework_name')
+    if not status:
+        raise KeyError('В полученных данных нет ключа status')
+    verdict = HOMEWORK_VERDICTS.get(status)
+    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def main():
     """Основная логика работы бота."""
+    # Проверяем наличие всех токенов
     check_tokens()
+    # Экземпляр класса Bot
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    timestamp = int(time.time())
-    pprint(get_api_answer(timestamp))
-    bot.send_message(TELEGRAM_CHAT_ID, get_api_answer(timestamp))
+    # Временная метка в unix формате
+    timestamp = 0
+    # Получаем ответ от api через функцию get_api_answer
+    response = get_api_answer(timestamp)
+    # Получаем корректные данные после проверки функцией check_response
+    homework = check_response(response)
+    parsed_homework = parse_status(homework)
+    pprint(parsed_homework)
 
 
 #     while True:
