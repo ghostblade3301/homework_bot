@@ -80,9 +80,9 @@ def main():
     """Основная логика работы бота."""
     check_tokens()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    timestamp = 0
+    timestamp = int(time.time())
     pprint(get_api_answer(timestamp))
-    bot.send_message(TELEGRAM_CHAT_ID, 'Привет')
+    bot.send_message(TELEGRAM_CHAT_ID, get_api_answer(timestamp))
 
 
 #     while True:
