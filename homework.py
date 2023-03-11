@@ -42,7 +42,11 @@ def check_tokens():
 
 def send_message(bot, message):
     """Отправка сообщения пользователю."""
-    bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+    try:
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+        logging.debug('Сообщение отправлено')
+    except:
+        logging.error(f'Сообщение из {send_message.__name__} не отправлено')
 
 
 def get_api_answer(timestamp):
@@ -66,28 +70,29 @@ def get_api_answer(timestamp):
 def check_response(response):
     """Проверка данных api на наличие ключевых составляющих."""
     logging.info('Проверка данных началась')
-    homeworks = response.get('homeworks')
-    current_date = response.get('current_date')
     if not isinstance(response, dict):
         raise TypeError('Ответ от api приходит не в типе данных dict')
+    homeworks = response.get('homeworks')
+    current_date = response.get('current_date')
     if not isinstance(homeworks, list):
         raise TypeError('homeworks приходит не в типе данных list')
     if not homeworks:
         raise KeyError('В ответе от api нет ключа homeworks')
     if not current_date:
-        raise KeyError('В ответе от api нет ключа homeworks')
-    return homeworks
+        raise KeyError('В ответе от api нет ключа current_date')
+    return homeworks[0]
 
 
 def parse_status(homework):
-    """Получения статуса работы"""
-    last_homework = homework[0]
-    homework_name = last_homework.get('homework_name')
-    status = last_homework.get('status')
+    """Получения статуса работы."""
+    homework_name = homework.get('homework_name')
+    status = homework.get('status')
     if not homework_name:
         raise KeyError('В полученных данных нет ключа homework_name')
     if not status:
         raise KeyError('В полученных данных нет ключа status')
+    if status not in HOMEWORK_VERDICTS:
+        raise ValueError(f'Неопределенный статус {status}')
     verdict = HOMEWORK_VERDICTS.get(status)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
@@ -99,7 +104,7 @@ def main():
     # Экземпляр класса Bot
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     # Временная метка в unix формате
-    timestamp = 0
+    timestamp = int(time.time())
     hwork_status = None
     while True:
         try:
