@@ -45,8 +45,8 @@ def send_message(bot, message):
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logging.debug('Сообщение отправлено')
-    except:
-        logging.error(f'Сообщение из {send_message.__name__} не отправлено')
+    except Exception as error:
+        logging.error(f'Сообщение не отправлено причина: {error}')
 
 
 def get_api_answer(timestamp):
@@ -62,9 +62,9 @@ def get_api_answer(timestamp):
         if response.status_code != HTTPStatus.OK:
             raise ConnectionError('ENDPOINT не доступен')
         return response.json()
-    except:
+    except Exception as error:
         logging.critical('Не удалось получить ответ от api')
-        raise ConnectionError('Не удалось получить ответ от api')
+        raise ConnectionError(f'Не удалось получить ответ от api: {error}')
 
 
 def check_response(response):
