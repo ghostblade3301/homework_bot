@@ -26,6 +26,15 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler(stream=sys.stdout)
+logger.addHandler(handler)
+formatter = logging.Formatter(
+    '%(asctime)s, [%(levelname)s] %(message)s',
+)
+handler.setFormatter(formatter)
+
 
 def check_tokens():
     """Проверка наличия токенов."""
@@ -135,12 +144,4 @@ def main():
 
 
 if __name__ == '__main__':
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(stream=sys.stdout)
-    logger.addHandler(handler)
-    formatter = logging.Formatter(
-        '%(asctime)s, [%(levelname)s] %(message)s',
-    )
-    handler.setFormatter(formatter)
     main()
