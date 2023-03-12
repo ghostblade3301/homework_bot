@@ -116,7 +116,7 @@ def main():
     # Экземпляр класса Bot
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     # Временная метка в unix формате
-    timestamp = 0
+    timestamp = int(time.time())
     hwork_status = None
     while True:
         try:
