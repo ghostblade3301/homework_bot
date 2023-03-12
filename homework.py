@@ -16,7 +16,7 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 RETRY_PERIOD = 600
-ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses123/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 
@@ -30,13 +30,13 @@ HOMEWORK_VERDICTS = {
 def check_tokens():
     """Проверка наличия токенов."""
     if not PRACTICUM_TOKEN:
-        logging.critical('Отсутствует токен PRACTICUM_TOKEN')
+        logger.critical('Отсутствует токен PRACTICUM_TOKEN')
         sys.exit('Завершение работы бота')
     if not TELEGRAM_TOKEN:
-        logging.critical('Отсутствует токен TELEGRAM_TOKEN')
+        logger.critical('Отсутствует токен TELEGRAM_TOKEN')
         sys.exit('Завершение работы бота')
     if not TELEGRAM_CHAT_ID:
-        logging.critical('Отсутствует токен TELEGRAM_CHAT_ID')
+        logger.critical('Отсутствует токен TELEGRAM_CHAT_ID')
         sys.exit('Завершение работы бота')
 
 
@@ -44,32 +44,32 @@ def send_message(bot, message):
     """Отправка сообщения пользователю."""
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
-        logging.debug('Сообщение отправлено')
+        logger.debug('Сообщение отправлено')
     except Exception as error:
-        logging.error(f'Сообщение не отправлено причина: {error}')
+        logger.error(f'Сообщение не отправлено причина: {error}')
 
 
 def get_api_answer(timestamp):
     """Получение ответа от api яндекса."""
     payload = {'from_date': timestamp}
     try:
-        logging.info('Попытка получения ответа от api')
+        logger.info('Попытка получения ответа от api')
         response = requests.get(
             ENDPOINT,
             headers=HEADERS,
             params=payload,
         )
-        if response.status_code != HTTPStatus.OK:
-            raise ConnectionError('ENDPOINT не доступен')
-        return response.json()
     except Exception as error:
-        logging.critical('Не удалось получить ответ от api')
+        logger.critical('Не удалось получить ответ от api')
         raise ConnectionError(f'Не удалось получить ответ от api: {error}')
+    if response.status_code != HTTPStatus.OK:
+        raise ConnectionError('ENDPOINT не доступен')
+    return response.json()
 
 
 def check_response(response):
     """Проверка данных api на наличие ключевых составляющих."""
-    logging.info('Проверка данных началась')
+    logger.info(f'Проверка данных {check_response.__name__} началась')
     if not isinstance(response, dict):
         raise TypeError('Ответ от api приходит не в типе данных dict')
     homeworks = response.get('homeworks')
@@ -80,11 +80,13 @@ def check_response(response):
         raise KeyError('В ответе от api нет ключа homeworks')
     if not current_date:
         raise KeyError('В ответе от api нет ключа current_date')
+    logger.info(f'Проверка данных {check_response.__name__} выполнена ')
     return homeworks[0]
 
 
 def parse_status(homework):
     """Получения статуса работы."""
+    logger.info(f'Проверка статуса {parse_status.__name__} работы началась')
     homework_name = homework.get('homework_name')
     status = homework.get('status')
     if not homework_name:
@@ -94,6 +96,7 @@ def parse_status(homework):
     if status not in HOMEWORK_VERDICTS:
         raise ValueError(f'Неопределенный статус {status}')
     verdict = HOMEWORK_VERDICTS.get(status)
+    logger.info(f'Проверка статуса {parse_status.__name__} работы выполнена')
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
@@ -104,7 +107,7 @@ def main():
     # Экземпляр класса Bot
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     # Временная метка в unix формате
-    timestamp = int(time.time())
+    timestamp = 0
     hwork_status = None
     while True:
         try:
@@ -125,15 +128,19 @@ def main():
                 hwork_status = None
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            logging.error(message)
+            send_message(bot, message)
+            logger.error(message)
         finally:
             time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s, [%(levelname)s] %(message)s',
-        stream=sys.stdout,
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(stream=sys.stdout)
+    logger.addHandler(handler)
+    formatter = logging.Formatter(
+        '%(asctime)s, [%(levelname)s] %(message)s',
     )
+    handler.setFormatter(formatter)
     main()
