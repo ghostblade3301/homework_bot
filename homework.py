@@ -118,6 +118,8 @@ def main():
     # Временная метка в unix формате
     timestamp = int(time.time())
     hwork_status = None
+    message = None
+
     while True:
         try:
             # Получаем ответ от api через функцию get_api_answer
@@ -131,13 +133,21 @@ def main():
                 if (hwork_status_old != hwork_status):
                     send_message(bot, hwork_status)
                 else:
-                    send_message(bot, 'Статус не изменился')
+                    # Проверка на дубли изменения статуса
+                    old_message = message
+                    message = 'Статус не изменился'
+                    if old_message != message:
+                        send_message(bot, message)
             else:
                 hwork_status_old = None
                 hwork_status = None
         except Exception as error:
+            old_message = message
             message = f'Сбой в работе программы: {error}'
-            send_message(bot, message)
+            # Проверка на дубли ошибок при отправке сообщений
+            if (old_message != message):
+                send_message(bot, message)
+            # Вывод ошибки в терминал
             logger.error(message)
         finally:
             time.sleep(RETRY_PERIOD)
