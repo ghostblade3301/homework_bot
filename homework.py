@@ -15,7 +15,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_PERIOD = 600
+RETRY_PERIOD = 10
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -53,9 +53,11 @@ def send_message(bot, message):
     """Отправка сообщения пользователю."""
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
-        logger.debug('Сообщение отправлено')
+        logger.debug(f'Сообщение отправлено from {send_message.__name__}')
+        return True
     except Exception as error:
         logger.error(f'Сообщение не отправлено причина: {error}')
+        return False
 
 
 def get_api_answer(timestamp):
@@ -119,6 +121,7 @@ def main():
     timestamp = int(time.time())
     hwork_status = None
     message = None
+    old_message = None
 
     while True:
         try:
@@ -130,7 +133,7 @@ def main():
             if homework:
                 hwork_status_old = hwork_status
                 hwork_status = parsed_homework
-                if (hwork_status_old != hwork_status):
+                if hwork_status_old != hwork_status:
                     send_message(bot, hwork_status)
                 else:
                     # Проверка на дубли изменения статуса
@@ -142,11 +145,14 @@ def main():
                 hwork_status_old = None
                 hwork_status = None
         except Exception as error:
-            old_message = message
             message = f'Сбой в работе программы: {error}'
             # Проверка на дубли ошибок при отправке сообщений
-            if (old_message != message):
+            if old_message != message:
                 send_message(bot, message)
+                # Перезаписываем ошибку, если сообщение отправлено
+                if send_message:
+                    old_message = message
+                    logger.debug('Сообщение отправлено, ошибка перезаписана')
             # Вывод ошибки в терминал
             logger.error(message)
         finally:
