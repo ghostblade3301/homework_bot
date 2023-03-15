@@ -149,7 +149,7 @@ def main():
             # Проверка на дубли ошибок при отправке сообщений
             if old_message != message:
                 # Попытка отправить сообщение через send_message
-                # Если функция send_message возвращает True => Сообщение отправлено
+                # Если фун-я send_message возвращает True=>Сообщение отправлено
                 # => перезаписываем ошибку
                 if send_message(bot, message):
                     old_message = message
