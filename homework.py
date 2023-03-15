@@ -140,7 +140,7 @@ def main():
                     old_message = message
                     message = 'Статус не изменился'
                     if old_message != message:
-                        send_message(bot, message) 
+                        send_message(bot, message)
             else:
                 hwork_status_old = None
                 hwork_status = None
