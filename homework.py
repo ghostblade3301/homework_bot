@@ -150,6 +150,7 @@ def main():
             if old_message != message:
                 # Попытка отправить сообщение через send_message
                 # Если функция send_message возвращает True => Сообщение отправлено
+                # => перезаписываем ошибку
                 if send_message(bot, message):
                     old_message = message
                     logger.debug('Сообщение отправлено, ошибка перезаписана')
