@@ -140,7 +140,7 @@ def main():
                     old_message = message
                     message = 'Статус не изменился'
                     if old_message != message:
-                        send_message(bot, message)
+                        send_message(bot, message) 
             else:
                 hwork_status_old = None
                 hwork_status = None
@@ -148,13 +148,15 @@ def main():
             message = f'Сбой в работе программы: {error}'
             # Проверка на дубли ошибок при отправке сообщений
             if old_message != message:
-                send_message(bot, message)
-                # Перезаписываем ошибку, если сообщение отправлено
-                if send_message:
+                # Попытка отправить сообщение через send_message
+                # Если функция send_message возвращает True => Сообщение отправлено
+                if send_message(bot, message):
                     old_message = message
                     logger.debug('Сообщение отправлено, ошибка перезаписана')
-            # Вывод ошибки в терминал
-            logger.error(message)
+                else:
+                    logger.debug('Сообщение не отправлено')
+            else:
+                logger.debug('Статус ошибки не изменился')
         finally:
             time.sleep(RETRY_PERIOD)
 
